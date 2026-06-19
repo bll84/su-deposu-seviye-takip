@@ -1,0 +1,45 @@
+# =====================================================================
+#  Su Deposu Seviye Takip Sistemi — Docker Compose
+# ---------------------------------------------------------------------
+#  İki servis:
+#    - mosquitto : MQTT broker (Eclipse Mosquitto)
+#    - nodered   : Node-RED (panel + eşik + Telegram bildirimi)
+#
+#  Ayağa kaldırma : docker compose up -d
+#  Durum          : docker compose ps
+#  Node-RED panel : http://localhost:1880/ui
+#
+#  İki servis aynı varsayılan ağda olduğu için Node-RED, broker'a
+#  "mosquitto" host adı ve 1883 portu ile ulaşır.
+# =====================================================================
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: su_deposu_mosquitto
+    restart: unless-stopped
+    ports:
+      - "11883:1883"  # host:11883 -> container:1883 (kumesguard_mosquitto 1883'ü kullanıyor)
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data       # persistence (kalıcı mesaj durumu)
+      - mosquitto_log:/mosquitto/log
+
+  nodered:
+    image: nodered/node-red:latest
+    container_name: su_deposu_nodered
+    restart: unless-stopped
+    ports:
+      - "11880:1880"  # host:11880 -> container:1880 (editör + dashboard; 1880 çakışmasını önler)
+    volumes:
+      - nodered_data:/data                   # flows, credentials, kurulu paletler
+      - ../node-red/settings.js:/data/settings.js:ro   # özel Node-RED ayarları (ui/ui, credential, log)
+    depends_on:
+      - mosquitto
+    environment:
+      - TZ=Europe/Istanbul
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+  nodered_data:

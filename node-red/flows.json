@@ -1,0 +1,262 @@
+[
+    {
+        "id": "flow_su_deposu",
+        "type": "tab",
+        "label": "Su Deposu Seviye",
+        "disabled": false,
+        "info": "ESP8266 -> MQTT -> Dashboard + Telegram esik bildirimi"
+    },
+    {
+        "id": "broker_mosquitto",
+        "type": "mqtt-broker",
+        "name": "Mosquitto (yerel)",
+        "broker": "mosquitto",
+        "port": "1883",
+        "clientid": "node_red_su_deposu",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "closeTopic": "",
+        "willTopic": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "ui_base_su",
+        "type": "ui_base",
+        "theme": {
+            "name": "theme-light",
+            "lightTheme": {
+                "default": "#0094CE",
+                "baseColor": "#0094CE",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif"
+            }
+        },
+        "site": {
+            "name": "Su Deposu Paneli",
+            "hideToolbar": "false",
+            "allowSwipe": "false",
+            "dateFormat": "DD.MM.YYYY",
+            "sizes": {
+                "sx": 48,
+                "sy": 48,
+                "gx": 6,
+                "gy": 6,
+                "cx": 6,
+                "cy": 6,
+                "px": 0,
+                "py": 0
+            }
+        }
+    },
+    {
+        "id": "ui_tab_su",
+        "type": "ui_tab",
+        "name": "Su Deposu",
+        "icon": "fa-tint",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "ui_group_su",
+        "type": "ui_group",
+        "name": "Seviye",
+        "tab": "ui_tab_su",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "tgbot_su",
+        "type": "telegram bot",
+        "botname": "su_deposu_bot",
+        "usernames": "",
+        "chatids": "",
+        "baseapiurl": "",
+        "updatemode": "polling",
+        "pollinterval": "300",
+        "usesocks": false,
+        "sockshost": "",
+        "socksport": "6667",
+        "socksusername": "anonymous",
+        "sockspassword": "",
+        "bothost": "",
+        "botpath": "",
+        "localbotport": "8443",
+        "publicbotport": "8443",
+        "privatekey": "",
+        "certificate": "",
+        "useselfsignedcertificate": false,
+        "sslterminated": false,
+        "verboselogging": false
+    },
+    {
+        "id": "mqtt_in_seviye",
+        "type": "mqtt in",
+        "z": "flow_su_deposu",
+        "name": "su_deposu/seviye",
+        "topic": "su_deposu/seviye",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "broker_mosquitto",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 150,
+        "y": 160,
+        "wires": [
+            [
+                "json_parse"
+            ]
+        ]
+    },
+    {
+        "id": "json_parse",
+        "type": "json",
+        "z": "flow_su_deposu",
+        "name": "JSON ayristir",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 360,
+        "y": 160,
+        "wires": [
+            [
+                "yuzde_cikar",
+                "func_esik"
+            ]
+        ]
+    },
+    {
+        "id": "gauge_yuzde",
+        "type": "ui_gauge",
+        "z": "flow_su_deposu",
+        "name": "Yuzde Gauge",
+        "group": "ui_group_su",
+        "order": 1,
+        "width": "6",
+        "height": "4",
+        "gtype": "gage",
+        "title": "Su Seviyesi",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#ca3838",
+            "#e6e600",
+            "#00b500"
+        ],
+        "seg1": "20",
+        "seg2": "50",
+        "diff": false,
+        "className": "",
+        "x": 830,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "chart_seviye",
+        "type": "ui_chart",
+        "z": "flow_su_deposu",
+        "name": "Seviye Grafigi",
+        "group": "ui_group_su",
+        "order": 2,
+        "width": "6",
+        "height": "5",
+        "label": "Seviye (%) - zaman serisi",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "Veri bekleniyor...",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "100",
+        "removeOlder": "1",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 830,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "yuzde_cikar",
+        "type": "function",
+        "z": "flow_su_deposu",
+        "name": "Yuzde sayisini cikar",
+        "func": "// Gauge ve grafik sadece SAYI ister; nesneden yuzde'yi cikar.\nif (msg.payload && typeof msg.payload.yuzde === 'number') {\n    msg.payload = msg.payload.yuzde;\n    return msg;\n}\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 590,
+        "y": 160,
+        "wires": [
+            [
+                "gauge_yuzde",
+                "chart_seviye"
+            ]
+        ]
+    },
+    {
+        "id": "func_esik",
+        "type": "function",
+        "z": "flow_su_deposu",
+        "name": "Esik kontrol + debounce",
+        "func": "// ============================================================\n//  Seviye bildirimi (band durum makinesi + debounce)\n//  Bir banda ILK girince TEK bildirim; ayni bandda tekrar etmez.\n//  Band degisince yeni bildirim (orn. dolarken 90->100, bosalirken 20->5).\n//    >=100 : doldu        |  >=90  : dolmak uzere\n//    <20   : dusuk seviye |  <=5   : su tukendi\n//    20..89: normal (bildirim yok)\n// ============================================================\n\n// >>> AYARLANABILIR <<<\nconst DOLU = 100;                  // \"doldu\" esigi (%)\nconst DOLMAK_UZERE = 90;           // \"dolmak uzere\" esigi (%)\nconst DUSUK = 20;                  // \"dusuk seviye\" esigi (%)\nconst TUKENDI = 5;                 // \"su tukendi\" esigi (%)\nconst CHAT_ID = \"\";     // Telegram chat_id (README'ye bak)\n\nconst veri = msg.payload;\nif (!veri || typeof veri.yuzde !== \"number\") {\n    return null;  // gecersiz mesaj, yok say\n}\nconst yuzde = veri.yuzde;\n\n// Bandi belirle (yukaridan asagiya oncelik)\nlet band;\nif (yuzde >= DOLU)              band = \"dolu\";\nelse if (yuzde >= DOLMAK_UZERE) band = \"dolmak_uzere\";\nelse if (yuzde <= TUKENDI)      band = \"tukendi\";\nelse if (yuzde < DUSUK)         band = \"dusuk\";\nelse                           band = \"normal\";\n\nconst onceki = context.get(\"band\") || \"\";\nif (band === onceki) {\n    return null;  // ayni band -> debounce, tekrar bildirme\n}\ncontext.set(\"band\", band);\n\n// Banda gore mesaj + durum rengi\nlet mesaj = null, renk = \"green\";\nif (band === \"dolu\")              { mesaj = \"✅ Su deposu DOLDU! (seviye %\" + yuzde + \")\";            renk = \"blue\";   }\nelse if (band === \"dolmak_uzere\") { mesaj = \"⚠️ Su deposu dolmak uzere (seviye %\" + yuzde + \")\";      renk = \"yellow\"; }\nelse if (band === \"dusuk\")        { mesaj = \"🔻 Su deposu seviyesi DUSUK (%\" + yuzde + \") — esik %\" + DUSUK + \" alti\"; renk = \"orange\"; }\nelse if (band === \"tukendi\")      { mesaj = \"🆘 SU TUKENDI! (seviye %\" + yuzde + \")\";                 renk = \"red\";    }\n\nnode.status({ fill: renk, shape: \"dot\", text: band + \" (%\" + yuzde + \")\" });\n\nif (mesaj === null) {\n    return null;  // normal band, bildirim gerekmiyor\n}\n\nmsg.payload = { chatId: CHAT_ID, type: \"message\", content: mesaj };\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 300,
+        "wires": [
+            [
+                "telegram_gonder"
+            ]
+        ]
+    },
+    {
+        "id": "telegram_gonder",
+        "type": "telegram sender",
+        "z": "flow_su_deposu",
+        "name": "Telegram bildirimi",
+        "bot": "tgbot_su",
+        "haserroroutput": false,
+        "outputs": 1,
+        "x": 870,
+        "y": 300,
+        "wires": [
+            []
+        ]
+    }
+]

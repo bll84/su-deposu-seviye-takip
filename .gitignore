@@ -1,0 +1,35 @@
+# =====================================================================
+#  .gitignore — Su Deposu Seviye Takip Sistemi
+#  Amaç: sır içeren / üretilen dosyaları repodan uzak tut.
+# =====================================================================
+
+# --- Firmware sırları (WiFi/MQTT) ---
+firmware/config.h
+
+# --- Node-RED runtime (Docker volume veya yerel kurulum) ---
+# Telegram token gibi sırlar burada şifreli durur -> repoya GİTMEZ.
+node-red/*_cred.json
+node-red/.config*.json
+node-red/.flows.json.backup
+node-red/.sessions.json
+node-red/node_modules/
+node-red/lib/
+node-red/.npm/
+
+# --- Docker tarafından üretilen veriler (bind-mount kullanılırsa) ---
+docker/mosquitto/data/
+docker/mosquitto/log/
+
+# --- Arduino derleme çıktıları ---
+firmware/build/
+*.bin
+*.elf
+*.hex
+
+# --- OS / editör artıkları ---
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
