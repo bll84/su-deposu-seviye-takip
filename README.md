@@ -9,6 +9,17 @@ altına inince **tek seferlik** Telegram bildirimi atan IoT sistemi. MVP / demo.
        (cihaz)          (yayın)      (broker)       (panel+eşik)   (bildirim)
 ```
 
+🔗 **GitHub:** https://github.com/bll84/su-deposu-seviye-takip
+
+---
+
+## Ekran Görüntüleri
+
+| Node-RED Paneli (canlı seviye) | Telegram Bildirimleri |
+|:---:|:---:|
+| ![Node-RED panel](docs/panel.png) | ![Telegram bildirimleri](docs/telegram-bildirimleri.png) |
+| Gauge + zaman serisi grafiği | Dolum / tükeniş otomatik uyarıları |
+
 ---
 
 ## 1. Donanım Bağlantısı
