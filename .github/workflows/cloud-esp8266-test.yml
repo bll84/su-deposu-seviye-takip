@@ -1,0 +1,83 @@
+name: ESP8266 derleme ve mantik testi
+on:
+  push:
+    branches:
+      - test/cloud-esp8266-20261028
+permissions:
+  contents: read
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Kaynak kodu al
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Firmware mantik testleri
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+          import tempfile
+          source = Path('firmware/su_deposu.ino').read_text(encoding='utf-8')
+          def function(name):
+              match = re.search(r'\b(?:void|int)\s+' + name + r'\s*\([^)]*\)\s*\{', source)
+              if not match:
+                  raise RuntimeError('Function not found: ' + name)
+              start = match.start()
+              brace = source.index('{', match.start())
+              depth = 0
+              for pos in range(brace, len(source)):
+                  if source[pos] == '{': depth += 1
+                  if source[pos] == '}':
+                      depth -= 1
+                      if depth == 0: return source[start:pos+1]
+              raise RuntimeError('Unbalanced function: ' + name)
+          code = '''#include <cassert>\n#include <cstdio>\n#include "config.example.h"\n''' + function('diziSirala') + '\n' + function('yuzdeHesapla') + '''
+          int main() {
+            assert(yuzdeHesapla(120.0f) == 0);
+            assert(yuzdeHesapla(20.0f) == 100);
+            assert(yuzdeHesapla(70.0f) == 50);
+            assert(yuzdeHesapla(160.0f) == 0);
+            assert(yuzdeHesapla(1.0f) == 100);
+            float a[] = {5.0f, 1.0f, 3.0f, 2.0f, 4.0f};
+            diziSirala(a, 5);
+            for (int i = 0; i < 5; ++i) assert(a[i] == i+1);
+            float single[] = {7.0f};
+            diziSirala(single, 1);
+            assert(single[0] == 7.0f);
+            std::puts("11 mantik kontrolu basarili");
+          }
+          '''
+          with tempfile.TemporaryDirectory() as directory:
+              src = Path(directory) / 'test.cpp'
+              exe = Path(directory) / 'test'
+              src.write_text(code, encoding='utf-8')
+              subprocess.run(['g++', '-std=c++17', '-Wall', '-Wextra', '-Werror', '-Ifirmware', str(src), '-o', str(exe)], check=True)
+              subprocess.run([str(exe)], check=True)
+          PY
+      - name: Arduino CLI kurulumu
+        uses: arduino/setup-arduino-cli@81d310742121c928ea9c8bbd407b4217b432ae02
+        with:
+          version: '1.2.2'
+      - name: ESP8266 ve kutuphane kurulumu
+        shell: bash
+        run: |
+          set -euo pipefail
+          index='https://arduino.esp8266.com/stable/package_esp8266com_index.json'
+          arduino-cli core update-index --additional-urls "$index"
+          arduino-cli core install esp8266:esp8266@3.1.2 --additional-urls "$index"
+          arduino-cli lib install 'PubSubClient@2.8'
+      - name: NodeMCU ESP8266 derlemesi
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/su_deposu" "$RUNNER_TEMP/firmware-build"
+          cp firmware/su_deposu.ino "$RUNNER_TEMP/su_deposu/su_deposu.ino"
+          cp firmware/config.example.h "$RUNNER_TEMP/su_deposu/config.h"
+          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir "$RUNNER_TEMP/firmware-build" "$RUNNER_TEMP/su_deposu"
+          test -s "$RUNNER_TEMP/firmware-build/su_deposu.ino.bin"
+          sha256sum "$RUNNER_TEMP/firmware-build/su_deposu.ino.bin"
